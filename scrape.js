@@ -3,8 +3,8 @@ const cron = require('node-cron');
 const puppeteer = require('puppeteer')
 var fs = require('fs')
 
-const email = process.argv[0]
-const pass = process.argv[1]
+const email = process.argv[2]
+const pass = process.argv[3]
 
 var arrayOfItems;
 
