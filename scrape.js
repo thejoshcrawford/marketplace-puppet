@@ -3,25 +3,28 @@ const cron = require('node-cron');
 const puppeteer = require('puppeteer')
 var fs = require('fs')
 
+const email = process.argv[0]
+const pass = process.argv[1]
+
 var arrayOfItems;
 
 // UPDATE WITH YOUR LOCATION REFERENCE FROM STEP 4
-let locationRef = 'sydney'
+let locationRef = 'spokane'
 
 // UPDATE WITH ITEMS YOU WANT TO SEARCH FOR
-let searchTerms = ['jeep', 'iphone']
+let searchTerms = ['crf']
 
 const nodemailer = require('nodemailer');
 
 // UPDATE WITH EMAIL YOU WANT TO RECEIVE AT
-let emailRecipient = "recipient@email.com"
+let emailRecipient = email
 
 // UPDATE WITH YOUR SENDING EMAIL ACCOUNT
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: 'sending@email.com',
-        pass: 'email_password'
+        user: email,
+        pass: pass
     }
 });
 
@@ -78,6 +81,7 @@ async function getItems() {
         }
         if (newItems.length > 0) {
             sendEmail(emailRecipient, searchTerms[i], newItems);
+            console.log(newItems);
         } else {
             console.log('No new items for ' + searchTerms[i]);
         }
@@ -91,6 +95,6 @@ async function getItems() {
 
 // TO CHANGE CRON TIME SCHEDULE
 // https://www.npmjs.com/package/node-cron
-cron.schedule('*/10 * * * *', function () {
+cron.schedule('*/5 * * * *', function () {
     getItems()
 });
