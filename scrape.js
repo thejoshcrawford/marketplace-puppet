@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 
 const puppeteer = require('puppeteer')
+const isPi = require('detect-rpi');
 var fs = require('fs')
 
 const email = process.argv[2]
@@ -54,7 +55,12 @@ async function getItems() {
     fs.readFile('./pastItems.json', 'utf-8', function (err, data) {
         arrayOfItems = JSON.parse(data);
     })
-    const browser = await puppeteer.launch()
+    let browser;
+    if (isPi()) {
+        browser = await puppeteer.launch({executablePath: '/usr/bin/chromium-browser'});
+    } else {
+        browser = await puppeteer.launch()
+    }
     const page = await browser.newPage()
     for (var i = 0; i < searchTerms.length; i++) {
         var newItems = [];
