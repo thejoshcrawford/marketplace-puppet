@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 
-const puppeteer = require('puppeteer')
+const puppeteer = require('puppeteer-core')
 const isPi = require('detect-rpi');
 var fs = require('fs')
 
