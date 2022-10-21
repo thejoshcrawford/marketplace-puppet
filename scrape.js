@@ -66,30 +66,35 @@ async function getItems() {
         var newItems = [];
         var searchTerm = searchTerms[i].replace(/ /g, '%20');
         console.log(`\nResults for ${searchTerms[i]}:\n`)
-        await page.goto(`https://www.facebook.com/marketplace/${locationRef}/search/?daysSinceListed=1&sortBy=best_match&query=${searchTerm}&exact=false`)
-        let bodyHTML = await page.evaluate(() => document.body.outerHTML);
-        let searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
-        let items = searchResult["feed_units"]["edges"]
-        if (items.length > 1) {
-            items.forEach((val, index) => {
-                var ID = val['node']['listing']['id'];
-                var link = `https://www.facebook.com/marketplace/item/${val['node']['listing']['id']}`;
-                var title = val['node']['listing']['marketplace_listing_title'];
-                var price = val['node']['listing']['listing_price']['formatted_amount'];
-                var item = { title: title, price: price, link: link }
-                if (arrayOfItems.pastItems.includes(ID)) {
-                } else {
-                    arrayOfItems.pastItems.push(ID)
-                    newItems.push(item);
-                    console.log(item)
-                }
-            });
-        }
-        if (newItems.length > 0) {
-            sendEmail(emailRecipient, searchTerms[i], newItems);
-            console.log(newItems);
-        } else {
-            console.log('No new items for ' + searchTerms[i]);
+        try {
+            await page.goto(`https://www.facebook.com/marketplace/${locationRef}/search/?daysSinceListed=1&sortBy=best_match&query=${searchTerm}&exact=false`,
+                { waitUntil: 'load', timeout: 0 } )
+            let bodyHTML = await page.evaluate(() => document.body.outerHTML);
+            let searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
+            let items = searchResult["feed_units"]["edges"]
+            if (items.length > 1) {
+                items.forEach((val, index) => {
+                    var ID = val['node']['listing']['id'];
+                    var link = `https://www.facebook.com/marketplace/item/${val['node']['listing']['id']}`;
+                    var title = val['node']['listing']['marketplace_listing_title'];
+                    var price = val['node']['listing']['listing_price']['formatted_amount'];
+                    var item = { title: title, price: price, link: link }
+                    if (arrayOfItems.pastItems.includes(ID)) {
+                    } else {
+                        arrayOfItems.pastItems.push(ID)
+                        newItems.push(item);
+                        console.log(item)
+                    }
+                });
+            }
+            if (newItems.length > 0) {
+                sendEmail(emailRecipient, searchTerms[i], newItems);
+                console.log(newItems);
+            } else {
+                console.log('No new items for ' + searchTerms[i]);
+            }
+        } catch (error) {
+            console.error(error);
         }
     };
     await browser.close()
