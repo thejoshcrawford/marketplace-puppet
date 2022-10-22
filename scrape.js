@@ -70,7 +70,13 @@ async function getItems() {
             await page.goto(`https://www.facebook.com/marketplace/${locationRef}/search/?daysSinceListed=1&sortBy=best_match&query=${searchTerm}&exact=false`,
                 { waitUntil: 'load', timeout: 0 } )
             let bodyHTML = await page.evaluate(() => document.body.outerHTML);
-            let searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
+            let searchResult;
+            try {
+                searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
+            }
+            catch (error) {
+                console.error("bodyHTML: " + bodyHTML)
+            }
             let items = searchResult["feed_units"]["edges"]
             if (items.length > 1) {
                 items.forEach((val, index) => {
