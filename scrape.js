@@ -71,12 +71,12 @@ async function getItems() {
                 { waitUntil: 'load', timeout: 0 } )
             let bodyHTML = await page.evaluate(() => document.body.outerHTML);
             let searchResult;
-            try {
+            //try {
                 searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
-            }
-            catch (error) {
-                console.error("bodyHTML: " + bodyHTML)
-            }
+            //}
+            //catch (error) {
+            //    console.error("bodyHTML: " + bodyHTML)
+            //}
             let items = searchResult["feed_units"]["edges"]
             if (items.length > 1) {
                 items.forEach((val, index) => {
