@@ -1,11 +1,18 @@
 const cron = require('node-cron');
-
-const puppeteer = require('puppeteer-core')
+const fs = require('fs')
 const isPi = require('detect-rpi');
-var fs = require('fs')
+
+let puppeteer;
+if (isPi()) {
+    puppeteer = require('puppeteer-core')
+} else {
+    puppeteer = require('puppeteer')
+}
 
 const email = process.argv[2]
 const pass = process.argv[3]
+const fblogin = process.argv[4]
+const fbpass = process.argv[5]
 
 var arrayOfItems;
 
@@ -13,7 +20,7 @@ var arrayOfItems;
 let locationRef = 'spokane'
 
 // UPDATE WITH ITEMS YOU WANT TO SEARCH FOR
-let searchTerms = ['crf']
+let searchTerms = ['yz']//, 'xtrainer', 'kdx']
 
 const nodemailer = require('nodemailer');
 
@@ -62,24 +69,58 @@ async function getItems() {
         browser = await puppeteer.launch()
     }
     const page = await browser.newPage()
+
+    // login
+    await page.goto('https://www.facebook.com/login');
+    
+    await page.type('#email', fblogin);
+    await page.type('#pass', fbpass);
+    await page.click('#loginbutton');
+    
+    await page.waitForNavigation();
+    // login
+
     for (var i = 0; i < searchTerms.length; i++) {
         var newItems = [];
         var searchTerm = searchTerms[i].replace(/ /g, '%20');
         console.log(`\nResults for ${searchTerms[i]}:\n`)
         try {
-            await page.goto(`https://www.facebook.com/marketplace/${locationRef}/search/?daysSinceListed=1&sortBy=best_match&query=${searchTerm}&exact=false`,
+            await page.goto(`https://www.facebook.com/marketplace/${locationRef}/search/?daysSinceListed=1&sortBy=best_match&query=${searchTerm}&exact=true`,
                 { waitUntil: 'load', timeout: 0 } )
+
+            // cookie stuff
+    //         const cookiesString = await fs.promises.readFile('./cookies.json') //, (err, data) => {
+    //           //  if (err) throw err;
+    //             //console.log("data: " + data);
+    //    //     });
+    //         console.log(`cookeiString: ${cookiesString}`)
+    //         const cookies = JSON.parse(cookiesString);
+    //         await page.setCookie(...cookies);
+
+    //         // const cookies = await page.cookies();
+    //         // await fs.writeFile('./cookies.json', JSON.stringify(cookies, null, 2), (err) => {
+    //         //     if (err)
+    //         //       console.log(err);
+    //         //     else {
+    //         //       console.log("File written successfully\n");
+    //         //       console.log("The written has the following contents:");
+    //         //       console.log(fs.readFileSync("books.txt", "utf8"));
+    //         //     }
+    //         //   });
+            
             let bodyHTML = await page.evaluate(() => document.body.outerHTML);
-            let searchResult;
-            //try {
-                searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"marketplace_seo_page")+/)[2]);
-            //}
-            //catch (error) {
-            //    console.error("bodyHTML: " + bodyHTML)
-            //}
+
+            //fs.promises.writeFile("./bodyHTML.html", bodyHTML)
+            console.log(bodyHTML.split(/(?:"marketplace_search":|,"viewer":)+/)[2])
+            const searchResult = JSON.parse(bodyHTML.split(/(?:"marketplace_search":|,"viewer":)+/)[2]);
+           
             let items = searchResult["feed_units"]["edges"]
             if (items.length > 1) {
                 items.forEach((val, index) => {
+                    if (['node']['listing'] === undefined) { // skip the ads
+                        return;
+                    }
+
                     var ID = val['node']['listing']['id'];
                     var link = `https://www.facebook.com/marketplace/item/${val['node']['listing']['id']}`;
                     var title = val['node']['listing']['marketplace_listing_title'];
@@ -94,7 +135,7 @@ async function getItems() {
                 });
             }
             if (newItems.length > 0) {
-                sendEmail(emailRecipient, searchTerms[i], newItems);
+                //sendEmail(emailRecipient, searchTerms[i], newItems);
                 console.log(newItems);
             } else {
                 console.log('No new items for ' + searchTerms[i]);
@@ -110,8 +151,9 @@ async function getItems() {
     })
 }
 
-// TO CHANGE CRON TIME SCHEDULE
-// https://www.npmjs.com/package/node-cron
-cron.schedule('*/5 * * * *', function () {
-    getItems()
-});
+getItems()
+
+//TO CHANGE CRON TIME SCHEDULE https://www.npmjs.com/package/node-cron
+// cron.schedule('*/5 * * * *', function () {
+//     getItems()
+// });
